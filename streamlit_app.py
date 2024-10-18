@@ -7,10 +7,8 @@ st.title("iPhone Accelerometer Data Capture")
 js_code = """
 let motionData = [];
 let isSending = false;
-const correctPasswordHash = 'Skijump2023'; // Hashing is simulated
 
 function startSending() {
-    const enteredPassword = prompt('Enter the password:');
 
     // Check if motion data permission is required
     if (typeof DeviceMotionEvent.requestPermission === 'function') {
@@ -35,17 +33,14 @@ function startSending() {
 
     function handleMotionPermissionGranted() {
         // Validate the password
-        if (enteredPassword === correctPasswordHash) {
-            if (window.DeviceMotionEvent) {
-                window.addEventListener('devicemotion', handleMotion);
-                isSending = true;
-                motionData = []; // Clear existing data when starting
-                setTimeout(stopSending, 5000); // Set capture duration
-            } else {
-                alert("Device Motion not supported.");
-            }
+        
+        if (window.DeviceMotionEvent) {
+            window.addEventListener('devicemotion', handleMotion);
+            isSending = true;
+            motionData = []; // Clear existing data when starting
+            setTimeout(stopSending, 5000); // Set capture duration
         } else {
-            alert("Incorrect password.");
+            alert("Device Motion not supported.");
         }
     }
 }
