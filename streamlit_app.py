@@ -1,40 +1,84 @@
-
 import streamlit as st
 from streamlit_javascript import st_javascript
 
-st.title("iPhone Accelerometer and Gyroscope Data")
+st.title("iPhone Accelerometer Data Capture")
 
-# JavaScript code to capture accelerometer and gyroscope data
+# Include the JavaScript code for motion data collection
 js_code = """
-    async function getMotionData() {
-        return new Promise((resolve, reject) => {
-            if (window.DeviceMotionEvent) {
-                window.addEventListener('devicemotion', function(event) {
-                    const motionData = {
-                        acceleration: event.acceleration,
-                        accelerationIncludingGravity: event.accelerationIncludingGravity,
-                        rotationRate: event.rotationRate,
-                        interval: event.interval
-                    };
-                    resolve(motionData);
-                });
-            } else {
-                reject("DeviceMotionEvent is not supported.");
-            }
-        });
+let motionData = [];
+let isSending = false;
+const correctPasswordHash = 'Skijump2023'; // Hashing is simulated
+
+function startSending() {
+    const enteredPassword = prompt('Enter the password:');
+
+    // Check if motion data permission is required
+    if (typeof DeviceMotionEvent.requestPermission === 'function') {
+        // Request permission from the user
+        DeviceMotionEvent.requestPermission()
+            .then(permissionState => {
+                if (permissionState === 'granted') {
+                    // Permission granted, start listening to motion events
+                    handleMotionPermissionGranted();
+                } else {
+                    alert('Motion data permission denied.');
+                }
+            })
+            .catch(error => {
+                console.error('Error requesting motion data permission:', error);
+                alert('Error requesting motion data permission.');
+            });
+    } else {
+        // Browser or device doesn't support the Permissions API
+        handleMotionPermissionGranted();
     }
 
-    getMotionData().then(data => data).catch(error => error);
+    function handleMotionPermissionGranted() {
+        // Validate the password
+        if (enteredPassword === correctPasswordHash) {
+            if (window.DeviceMotionEvent) {
+                window.addEventListener('devicemotion', handleMotion);
+                isSending = true;
+                motionData = []; // Clear existing data when starting
+                setTimeout(stopSending, 5000); // Set capture duration
+            } else {
+                alert("Device Motion not supported.");
+            }
+        } else {
+            alert("Incorrect password.");
+        }
+    }
+}
+
+function stopSending() {
+    window.removeEventListener('devicemotion', handleMotion);
+    isSending = false;
+    sendDataToStreamlit(motionData); // Send data to Streamlit
+}
+
+function handleMotion(event) {
+    if (isSending) {
+        const acceleration = event.acceleration;
+        const rotationRate = event.rotationRate;
+        motionData.push({
+            acceleration: acceleration,
+            rotationRate: rotationRate
+        });
+    }
+}
+
+function sendDataToStreamlit(data) {
+    return data;  // Return collected motion data to Streamlit
+}
+
+startSending();
 """
 
-# Execute the JavaScript and return the motion data
+# Execute the JavaScript code and return the motion data to Streamlit
 motion_data = st_javascript(js_code)
 
-# Check if motion data is available and display it
+# Display the captured motion data in Streamlit
 if motion_data:
-    st.write("Acceleration (without gravity):", motion_data.get('acceleration', 'Unavailable'))
-    st.write("Acceleration (with gravity):", motion_data.get('accelerationIncludingGravity', 'Unavailable'))
-    st.write("Rotation rate:", motion_data.get('rotationRate', 'Unavailable'))
-    st.write("Sensor data interval:", motion_data.get('interval', 'Unavailable'))
+    st.write("Captured motion data:", motion_data)
 else:
-    st.write("Unable to fetch motion data. Make sure motion access is enabled on your device.")
+    st.write("No motion data captured yet.")
